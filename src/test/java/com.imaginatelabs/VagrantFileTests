@@ -1,0 +1,25 @@
+package com.imageinatelabs;
+
+
+import org.testng.Assert;
+import org.testng.annotations.Test;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+
+
+public class VagrantFileTests {
+
+    @Test
+    public void createFilesShouldCreateRequiredDirectory() throws IOException {
+        //FIXME Running tests doesn't work
+        File file = new File("C:/FooBar/myfile.txt");
+//        Files.createFile(file.toPath());
+        String expected = "my content \n \ton a new line";
+        Files.write(file.toPath(), new String(expected).getBytes());
+        String actual = new String (Files.readAllBytes(file.toPath()));
+        Assert.assertEquals(actual,expected);
+    }
+
+
+}
