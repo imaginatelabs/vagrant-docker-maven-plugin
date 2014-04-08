@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class VagrantFile {
+    //TODO mount local file system to access to all the project files
     public static final String FILE_NAME = "Vagrantfile";
     private final List<Container> containers;
     private String box;

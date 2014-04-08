@@ -14,8 +14,7 @@ import java.util.List;
 @Mojo( name = "run")
 public class RunDocker extends AbstractMojo {
 
-    //TODO create vagrant file in root of the project so that it has access to all the project files
-    @Parameter( property = "outputDir", defaultValue = "${project.build.directory}",  required = true )
+    @Parameter( property = "outputDir", defaultValue = "${project.basedir}",  required = true )
     private File outputDirectory;
 
     @Parameter( property = "run.box", defaultValue = "precise64" )
