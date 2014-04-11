@@ -23,8 +23,8 @@ public class RunDocker extends AbstractMojo {
     @Parameter( property = "run.boxUrl", defaultValue = "http://files.vagrantup.com/precise64.box" )
     private String boxUrl;
 
-    @Parameter( property = "run.network", defaultValue = "" )
-    private String network;
+    @Parameter( property = "run.networks", defaultValue = "" )
+    private List<String> networks;
 
     @Parameter( property = "run.containers" )
     private List<Container> containers;
@@ -40,7 +40,7 @@ public class RunDocker extends AbstractMojo {
     }
 
     private VagrantFile compileVagrantDockerConfig() throws MojoExecutionException {
-        VagrantFile vagrantFile = new VagrantFile(outputDirectory, box, boxUrl, network, containers);
+        VagrantFile vagrantFile = new VagrantFile(outputDirectory, box, boxUrl, networks, containers);
         if(Vagrant.hasVagrantFileConfigurationChanged(vagrantFile)) {
             log.info(String.format("Writing Docker and Vagrant config to %s", "foobar"));
             Vagrant.writeVagrantFileToTheFileSystem(vagrantFile);
