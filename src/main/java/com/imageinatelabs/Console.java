@@ -2,30 +2,65 @@ package com.imageinatelabs;
 
 
 import org.apache.maven.plugin.logging.Log;
-import org.codehaus.plexus.util.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Scanner;
+import java.io.*;
 
 public class Console {
     public static int exec(String command, String[] envp, File dir, Log log) throws IOException, InterruptedException {
-        Runtime rt = Runtime.getRuntime();
-        Process pr = rt.exec(command,envp, dir);
-        Scanner scanner = new Scanner(pr.getInputStream());
-        while(scanner.hasNext()){
-            String line = scanner.nextLine();
-            if(StringUtils.isEmpty(line)){
-                line = scanner.next();
+        Process pr = Runtime.getRuntime().exec(command, envp, dir);
+
+        StreamGobbler.startOutputStreamGobbler(pr.getInputStream(), log);
+        StreamGobbler.startErrorStreamGobbler(pr.getErrorStream(), log);
+
+        int exitCode = pr.waitFor();
+        if(exitCode!=0){
+            log.error("Failed with Exit Code " + exitCode);
+        }
+        return exitCode;
+    }
+}
+
+class StreamGobbler extends Thread{
+    enum Type {ERROR, OUTPUT};
+    InputStream is;
+    Type type;
+    Log log;
+
+    StreamGobbler(InputStream is, Type type, Log log){
+        this.is = is;
+        this.type = type;
+        this.log = log;
+    }
+
+    public static StreamGobbler startOutputStreamGobbler(InputStream is, Log log){
+        StreamGobbler streamGobbler = new StreamGobbler(is, Type.OUTPUT, log);
+        streamGobbler.start();
+        return streamGobbler;
+    }
+
+    public static StreamGobbler startErrorStreamGobbler(InputStream is, Log log){
+        StreamGobbler streamGobbler = new StreamGobbler(is, Type.ERROR, log);
+        streamGobbler.start();
+        return streamGobbler;
+    }
+
+    public void run(){
+        try{
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+            String line = null;
+            while( (line = br.readLine()) != null){
+                switch(type){
+                    case OUTPUT: log.info(line);
+                        break;
+                    case ERROR: log.error(line);
+                        break;
+                    default: System.out.println(line);
+                        break;
+                }
             }
-            log.info(line);
+        }catch(IOException ioe){
+            ioe.printStackTrace();
         }
-        int exitVal = pr.waitFor();
-        if(exitVal!=0){
-            log.error("Failed with Exit Code " + exitVal);
-        }
-        return exitVal;
     }
 }
