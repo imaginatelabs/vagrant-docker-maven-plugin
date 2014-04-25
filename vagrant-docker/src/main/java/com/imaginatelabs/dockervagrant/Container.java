@@ -1,4 +1,4 @@
-package com.imageinatelabs;
+package com.imaginatelabs.dockervagrant;
 
 import org.codehaus.plexus.util.StringUtils;
 

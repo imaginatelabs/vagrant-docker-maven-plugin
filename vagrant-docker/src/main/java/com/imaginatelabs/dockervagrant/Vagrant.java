@@ -1,4 +1,4 @@
-package com.imageinatelabs;
+package com.imaginatelabs.dockervagrant;
 
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -32,7 +32,7 @@ public class Vagrant {
         return true;
     }
 
-    static int destroy(Path dir) {
+    public static int destroy(Path dir) {
         return cmd(DESTROY+" -f",dir,"Destroying running instance Docker and Vagrant");
     }
 
@@ -48,7 +48,7 @@ public class Vagrant {
         LogF.i(message);
         int exit = -1;
         try {
-            exit = Console.exec(vagrant(arg), null, dir.toFile());
+            exit = com.imaginatelabs.dockervagrant.Console.exec(vagrant(arg), null, dir.toFile());
         } catch (Exception e) {
             LogF.e(e.getMessage());
         }
@@ -155,7 +155,7 @@ public class Vagrant {
     private static boolean hasExistingBox(String hash) {
         List<String> output = new ArrayList<String>();
         try {
-            Console.exec("vagrant box list", null, new File("/"), output);
+            com.imaginatelabs.dockervagrant.Console.exec("vagrant box list", null, new File("/"), output);
             for(String line :output){
                 if(StringUtils.contains(line,hash)){
                     return true;

@@ -1,5 +1,6 @@
-package com.imageinatelabs;
+package com.imaginatelabs.dockervagrant;
 
+import com.imaginatelabs.dockervagrant.Container;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;

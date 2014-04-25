@@ -1,6 +1,7 @@
 package com.imageinatelabs;
 
 
+import com.imaginatelabs.dockervagrant.Vagrant;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;

@@ -1,4 +1,4 @@
-package com.imageinatelabs;
+package com.imaginatelabs.dockervagrant;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 
