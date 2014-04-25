@@ -1,6 +1,5 @@
 package com.imaginatelabs.dockervagrant;
 
-import com.imaginatelabs.dockervagrant.Container;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
@@ -25,7 +24,7 @@ public class VagrantFile {
         this.path = path;
     }
 
-    public String toFileFormat(){
+    public String toText(){
         return String.format("%s%s%s%s%s%s",
                 "# -*- mode: ruby -*-\n# vi: set ft=ruby :\n\nVagrant.configure(\"2\") do |config|\n",
                 printBox(),
@@ -88,11 +87,11 @@ public class VagrantFile {
     }
 
     public String getHexHashCode(){
-        return Integer.toHexString(this.toFileFormat().hashCode());
+        return Integer.toHexString(this.toText().hashCode());
     }
 
     public byte[] getHexHashCodeAsBytes(){
-        return Integer.toHexString(this.toFileFormat().hashCode()).getBytes();
+        return Integer.toHexString(this.toText().hashCode()).getBytes();
     }
 
     public Path getPath() {
@@ -104,7 +103,7 @@ public class VagrantFile {
     }
 
     public byte[] getBytes() {
-        return toFileFormat().getBytes();
+        return toText().getBytes();
     }
 
     public Path getFullHashFilePath() {

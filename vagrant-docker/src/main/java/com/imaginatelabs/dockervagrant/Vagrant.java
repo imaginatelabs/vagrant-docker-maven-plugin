@@ -16,16 +16,16 @@ public class Vagrant {
     public static final String HALT = "halt";
     public static final String SUSPEND = "suspend";
 
-    static void up(VagrantFile vagrantFile){
-        if(cmd("up", vagrantFile.getPath(),"Calling vagrant up") == 0) {
+    public static void up(VagrantFile vagrantFile) {
+        if (cmd("up", vagrantFile.getPath(), "Calling vagrant up") == 0) {
             LogF.i("Docker now running on Vagrant");
-        }else{
+        } else {
             LogF.e("There was an error starting Docker in Vagrant");
         }
     }
 
-    static boolean isInstalled(){
-        if(cmd("-v",new File("/").toPath(),"Running Docker on Vagrant")!=0){
+    public static boolean isInstalled() {
+        if (cmd("-v", new File("/").toPath(), "Running Docker on Vagrant") != 0) {
             LogF.e("An error occurred, stopping Docker on Vagrant");
             return false;
         }
@@ -33,15 +33,15 @@ public class Vagrant {
     }
 
     public static int destroy(Path dir) {
-        return cmd(DESTROY+" -f",dir,"Destroying running instance Docker and Vagrant");
+        return cmd(DESTROY + " -f", dir, "Destroying running instance Docker and Vagrant");
     }
 
     public static int halt(Path dir) {
-        return cmd(HALT,dir,"Halting running instance Docker and Vagrant");
+        return cmd(HALT, dir, "Halting running instance Docker and Vagrant");
     }
 
-    public static int suspend(Path dir){
-        return cmd(SUSPEND,dir,"Suspending running instance Docker and Vagrant");
+    public static int suspend(Path dir) {
+        return cmd(SUSPEND, dir, "Suspending running instance Docker and Vagrant");
     }
 
     public static int cmd(String arg, Path dir, String message) {
@@ -56,7 +56,7 @@ public class Vagrant {
     }
 
     private static String vagrant(String cmd) {
-        return String.format("vagrant %s",cmd);
+        return String.format("vagrant %s", cmd);
     }
 
     public static void ssh(String containerName) {
@@ -65,15 +65,15 @@ public class Vagrant {
         //Connect to the console so that commands can be entered,
         //NOTE: It would be good to return this console session so
         //      that it can be used by other processes
-        cmd("ssh",new File("/").toPath(),"Connecting to container "+containerName);
+        cmd("ssh", new File("/").toPath(), "Connecting to container " + containerName);
     }
 
-    public static void packageBox(String boxName, Path dir){
-        cmd("package --output "+boxName, dir, "Creating Box with name "+boxName);
+    public static void packageBox(String boxName, Path dir) {
+        cmd("package --output " + boxName, dir, "Creating Box with name " + boxName);
     }
 
     public static void run(VagrantFile vagrantFile, boolean cacheConfiguration) throws IOException, MojoExecutionException {
-        if(!Vagrant.isInstalled()) return;
+        if (!Vagrant.isInstalled()) return;
 
         boolean hasPreviousVagrantHashFile = doesPreviousVagrantHashFileExist(vagrantFile);
         boolean hasEqualHashesForCurrentAndPrevious = false;
@@ -92,7 +92,7 @@ public class Vagrant {
                 LogF.i("Removing previous cached configuration in box %s", previousHash);
                 Vagrant.removeBox(previousHash);
             }
-        }else{
+        } else {
             LogF.i("No Vagrantfile.hash exists creating Vagrantfile from docker-maven-plugin configuration.");
         }
 
@@ -111,7 +111,7 @@ public class Vagrant {
     private static boolean doesPreviousVagrantHashFileExist(VagrantFile vagrantFile) {
         LogF.i(String.format("Checking for existing file %s", vagrantFile.getFullHashFilePath()));
         boolean hasExistingFile = false;
-        if(hasExistingFile = Files.exists(vagrantFile.getFullHashFilePath())){
+        if (hasExistingFile = Files.exists(vagrantFile.getFullHashFilePath())) {
             LogF.i(String.format("File exists at %s", vagrantFile.getFullHashFilePath()));
         }
         return hasExistingFile;
@@ -137,27 +137,27 @@ public class Vagrant {
         File file = new File(vagrantFile.getPath().toString(), vagrantFile.getHexHashCode());
 
         LogF.i("Cleaning up - removing %s", file.getAbsolutePath());
-        if(Files.deleteIfExists(file.toPath())){
+        if (Files.deleteIfExists(file.toPath())) {
             LogF.i("Successfully removed %s", file.getAbsolutePath());
-        }else{
+        } else {
             LogF.i("Failed to removed %s", file.getAbsolutePath());
         }
     }
 
     private static void addBox(String hash, VagrantFile vagrantFile) {
-        cmd(String.format("box add --name %s %s",hash,hash),vagrantFile.getPath(),"");
+        cmd(String.format("box add --name %s %s", hash, hash), vagrantFile.getPath(), "");
     }
 
     private static void removeBox(String boxName) {
-        cmd("box remove "+boxName,new File("/").toPath(), "Removing Box with name "+boxName);
+        cmd("box remove " + boxName, new File("/").toPath(), "Removing Box with name " + boxName);
     }
 
     private static boolean hasExistingBox(String hash) {
         List<String> output = new ArrayList<String>();
         try {
             com.imaginatelabs.dockervagrant.Console.exec("vagrant box list", null, new File("/"), output);
-            for(String line :output){
-                if(StringUtils.contains(line,hash)){
+            for (String line : output) {
+                if (StringUtils.contains(line, hash)) {
                     return true;
                 }
             }
@@ -172,12 +172,12 @@ public class Vagrant {
     }
 
     public static void writeVagrantFileToTheFileSystem(VagrantFile vagrantFile) throws IOException {
-        writeFileToTheFileSystem(vagrantFile.getFullPath(), vagrantFile.toFileFormat());
+        writeFileToTheFileSystem(vagrantFile.getFullPath(), vagrantFile.toText());
     }
 
     public static void writeFileToTheFileSystem(Path absolutePath, String content) throws IOException {
         LogF.i("Writing %s", absolutePath);
-        if(!Files.exists(absolutePath.getParent())) {
+        if (!Files.exists(absolutePath.getParent())) {
             Files.createDirectory(absolutePath.getParent());
         }
         Files.write(absolutePath, content.getBytes());
