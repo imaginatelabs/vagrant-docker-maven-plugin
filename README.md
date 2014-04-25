@@ -1,3 +1,6 @@
+#WARNING
+This plugin is still very much in alpha and is casually being developed as I need features to support another project I'm working on. The plugin is unstable and should be used at your own risk or if you know what you're doing with vagrant, docker, maven and java. If you like what I've started and want to contribute to this project feel free to get in contact with me or send me a pull request!
+
 # Docker Maven Plugin
 The the docker-maven-plugin provides the ability to run containers in the maven build life cycle
 
