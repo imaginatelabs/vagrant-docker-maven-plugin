@@ -24,11 +24,11 @@ public class StopDocker extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         Log log = getLog();
         if(StringUtils.contains(arg, Vagrant.DESTROY)){
-            Vagrant.destroy(outputDirectory, log);
+            Vagrant.destroy(outputDirectory.toPath());
         }else if(StringUtils.contains(arg, Vagrant.HALT)){
-            Vagrant.halt(outputDirectory,log);
+            Vagrant.halt(outputDirectory.toPath());
         }else if(StringUtils.contains(arg, Vagrant.SUSPEND)){
-            Vagrant.suspend(outputDirectory,log);
+            Vagrant.suspend(outputDirectory.toPath());
         }
     }
 }

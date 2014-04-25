@@ -21,6 +21,6 @@ public class SshDocker extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         //TODO ssh into vagrant box and then attach to the docker container in interactive mode
-        Vagrant.ssh(containerName,outputDirectory,getLog());
+        Vagrant.ssh(containerName);
     }
 }

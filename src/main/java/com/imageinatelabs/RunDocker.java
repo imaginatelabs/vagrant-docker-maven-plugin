@@ -29,25 +29,15 @@ public class RunDocker extends AbstractMojo {
     @Parameter( property = "run.containers" )
     private List<Container> containers;
 
-    private Log log = getLog();
+    @Parameter( property = "run.cacheConfiguration", defaultValue = "true")
+    private boolean cacheConfiguration = true;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if(Vagrant.isInstalled(log)) {
-            VagrantFile vagrantFile = compileVagrantDockerConfig();
-            Vagrant.up(vagrantFile, log);
+        try {
+            Vagrant.run(new VagrantFile(outputDirectory, box, boxUrl, networks, containers), cacheConfiguration);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Run Failed",e);
         }
     }
-
-    private VagrantFile compileVagrantDockerConfig() throws MojoExecutionException {
-        VagrantFile vagrantFile = new VagrantFile(outputDirectory, box, boxUrl, networks, containers);
-        if(Vagrant.hasVagrantFileConfigurationChanged(vagrantFile)) {
-            log.info(String.format("Writing Docker and Vagrant config to %s", "foobar"));
-            Vagrant.writeVagrantFileToTheFileSystem(vagrantFile);
-        }else{
-            log.info(String.format("No changes made for Docker and Vagrant config in %s", vagrantFile.getFullPath().toString()));
-        }
-        return vagrantFile;
-    }
-
 }

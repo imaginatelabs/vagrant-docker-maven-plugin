@@ -4,17 +4,31 @@ package com.imageinatelabs;
 import org.apache.maven.plugin.logging.Log;
 
 import java.io.*;
+import java.util.List;
 
 public class Console {
-    public static int exec(String command, String[] envp, File dir, Log log) throws IOException, InterruptedException {
+    public static int exec(String command, String[] envp, File dir) throws IOException, InterruptedException {
         Process pr = Runtime.getRuntime().exec(command, envp, dir);
 
-        StreamGobbler.startOutputStreamGobbler(pr.getInputStream(), log);
-        StreamGobbler.startErrorStreamGobbler(pr.getErrorStream(), log);
+        StreamGobbler.startOutputStreamGobbler(pr.getInputStream());
+        StreamGobbler.startErrorStreamGobbler(pr.getErrorStream());
 
         int exitCode = pr.waitFor();
         if(exitCode!=0){
-            log.error("Failed with Exit Code " + exitCode);
+            LogF.e("Failed with Exit Code " + exitCode);
+        }
+        return exitCode;
+    }
+
+    public static int exec(String command, String[] envp, File dir, List<String> output) throws IOException, InterruptedException {
+        Process pr = Runtime.getRuntime().exec(command, envp, dir);
+
+        StreamGobbler.startOutputStreamGobbler(pr.getInputStream(), output);
+        StreamGobbler.startErrorStreamGobbler(pr.getErrorStream(), output);
+
+        int exitCode = pr.waitFor();
+        if(exitCode!=0){
+            output.add("Failed with Exit Code " + exitCode);
         }
         return exitCode;
     }
@@ -24,24 +38,56 @@ class StreamGobbler extends Thread{
     enum Type {ERROR, OUTPUT};
     InputStream is;
     Type type;
-    Log log;
+    List<String> output;
 
-    StreamGobbler(InputStream is, Type type, Log log){
+    StreamGobbler(InputStream is, Type type){
         this.is = is;
         this.type = type;
-        this.log = log;
     }
 
-    public static StreamGobbler startOutputStreamGobbler(InputStream is, Log log){
-        StreamGobbler streamGobbler = new StreamGobbler(is, Type.OUTPUT, log);
+    StreamGobbler(InputStream is, Type type, List<String> output){
+        this.is = is;
+        this.type = type;
+        this.output = output;
+    }
+
+    public static StreamGobbler startOutputStreamGobbler(InputStream is){
+        StreamGobbler streamGobbler = new StreamGobbler(is, Type.OUTPUT);
         streamGobbler.start();
         return streamGobbler;
     }
 
-    public static StreamGobbler startErrorStreamGobbler(InputStream is, Log log){
-        StreamGobbler streamGobbler = new StreamGobbler(is, Type.ERROR, log);
+    public static StreamGobbler startErrorStreamGobbler(InputStream is){
+        StreamGobbler streamGobbler = new StreamGobbler(is, Type.ERROR);
         streamGobbler.start();
         return streamGobbler;
+    }
+
+    public static StreamGobbler startOutputStreamGobbler(InputStream is, List<String> output){
+        StreamGobbler streamGobbler = new StreamGobbler(is, Type.OUTPUT, output);
+        streamGobbler.start();
+        return streamGobbler;
+    }
+
+    public static StreamGobbler startErrorStreamGobbler(InputStream is, List<String> output){
+        StreamGobbler streamGobbler = new StreamGobbler(is, Type.ERROR, output);
+        streamGobbler.start();
+        return streamGobbler;
+    }
+
+    public void writeLine(String line){
+        if(output != null){
+            output.add(line);
+        }else{
+            LogF.l().info(line);
+        }
+    }
+    public void writeError(String line){
+        if(output != null){
+            output.add(line);
+        }else{
+            LogF.l().error(line);
+        }
     }
 
     public void run(){
@@ -51,9 +97,9 @@ class StreamGobbler extends Thread{
             String line = null;
             while( (line = br.readLine()) != null){
                 switch(type){
-                    case OUTPUT: log.info(line);
+                    case OUTPUT: writeLine(line);
                         break;
-                    case ERROR: log.error(line);
+                    case ERROR: writeError(line);
                         break;
                     default: System.out.println(line);
                         break;

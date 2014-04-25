@@ -2,11 +2,13 @@ package com.imageinatelabs;
 
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Vagrant {
 
@@ -14,41 +16,41 @@ public class Vagrant {
     public static final String HALT = "halt";
     public static final String SUSPEND = "suspend";
 
-    static void up(VagrantFile vagrantFile, Log log){
-        if(cmd("up", new File(vagrantFile.getPath().toString()),"Calling vagrant up", log) == 0) {
-            log.info("Docker now running on Vagrant");
+    static void up(VagrantFile vagrantFile){
+        if(cmd("up", vagrantFile.getPath(),"Calling vagrant up") == 0) {
+            LogF.i("Docker now running on Vagrant");
         }else{
-            log.error("There was an error starting Docker in Vagrant");
+            LogF.e("There was an error starting Docker in Vagrant");
         }
     }
 
-    static boolean isInstalled(Log log){
-        if(cmd("-v",new File("/"),"Running Docker on Vagrant",log)!=0){
-            log.error("An error occurred, stopping Docker on Vagrant");
+    static boolean isInstalled(){
+        if(cmd("-v",new File("/").toPath(),"Running Docker on Vagrant")!=0){
+            LogF.e("An error occurred, stopping Docker on Vagrant");
             return false;
         }
         return true;
     }
 
-    static int destroy(File vagrantFileDirectory, Log log) {
-        return cmd(DESTROY+" -f",vagrantFileDirectory,"Destroying running instance Docker and Vagrant",log);
+    static int destroy(Path dir) {
+        return cmd(DESTROY+" -f",dir,"Destroying running instance Docker and Vagrant");
     }
 
-    public static int halt(File vagrantFileDirectory, Log log) {
-        return cmd(HALT,vagrantFileDirectory,"Halting running instance Docker and Vagrant",log);
+    public static int halt(Path dir) {
+        return cmd(HALT,dir,"Halting running instance Docker and Vagrant");
     }
 
-    public static int suspend(File vagrantFileDirectory, Log log){
-        return cmd(SUSPEND,vagrantFileDirectory,"Suspending running instance Docker and Vagrant",log);
+    public static int suspend(Path dir){
+        return cmd(SUSPEND,dir,"Suspending running instance Docker and Vagrant");
     }
 
-    public static int cmd(String arg, File vagrantFileDirectory, String message, Log log) {
-        log.info(message);
+    public static int cmd(String arg, Path dir, String message) {
+        LogF.i(message);
         int exit = -1;
         try {
-            exit = Console.exec(vagrant(arg), null, vagrantFileDirectory, log);
+            exit = Console.exec(vagrant(arg), null, dir.toFile());
         } catch (Exception e) {
-            log.error(e);
+            LogF.e(e.getMessage());
         }
         return exit;
     }
@@ -57,42 +59,131 @@ public class Vagrant {
         return String.format("vagrant %s",cmd);
     }
 
-    public static void ssh(String containerName, File vagrantFileDirectory, Log log) {
+    public static void ssh(String containerName) {
         //if containerName is empty just ssh into the vagrant box
         //else vagrant ssh then docker connect to image
         //Connect to the console so that commands can be entered,
         //NOTE: It would be good to return this console session so
         //      that it can be used by other processes
-        cmd("ssh",vagrantFileDirectory,"Connecting to container "+containerName,log);
+        cmd("ssh",new File("/").toPath(),"Connecting to container "+containerName);
     }
 
-    public static void pack(){
-        //TODO Creates vagrant box which is used if config hasn't changed
-        //noPack = true :means that it will create a box each time.
-        //This will check the Vagrantfile and see if a box exists with the name that is a hash of the Vagrantfile
+    public static void packageBox(String boxName, Path dir){
+        cmd("package --output "+boxName, dir, "Creating Box with name "+boxName);
     }
 
-    public static void writeVagrantFileToTheFileSystem(VagrantFile vagrantFile) throws MojoExecutionException {
-        try{
-            if(!Files.exists(vagrantFile.getPath())) {
-                Files.createDirectory(vagrantFile.getPath());
+    public static void run(VagrantFile vagrantFile, boolean cacheConfiguration) throws IOException, MojoExecutionException {
+        if(!Vagrant.isInstalled()) return;
+
+        boolean hasPreviousVagrantHashFile = doesPreviousVagrantHashFileExist(vagrantFile);
+        boolean hasEqualHashesForCurrentAndPrevious = false;
+        String currentHash = vagrantFile.getHexHashCode();
+
+
+        if (hasPreviousVagrantHashFile) {
+            String previousHash = readHashFromFile(vagrantFile);
+            hasEqualHashesForCurrentAndPrevious = StringUtils.equals(currentHash, previousHash);
+
+            if (hasEqualHashesForCurrentAndPrevious && Vagrant.hasExistingBox(currentHash)) {
+                LogF.i("Current configuration already cached in box %s", currentHash);
+                LogF.i("Using cached configuration in box %s", currentHash);
+                vagrantFile.useCachedBox(currentHash);
+            } else if (Vagrant.hasExistingBox(previousHash)) {
+                LogF.i("Removing previous cached configuration in box %s", previousHash);
+                Vagrant.removeBox(previousHash);
             }
-            Files.write(vagrantFile.getFullPath(), vagrantFile.getBytes());
-        }catch ( IOException e ){
-            throw new MojoExecutionException("Error creating Vagrantfile", e);
+        }else{
+            LogF.i("No Vagrantfile.hash exists creating Vagrantfile from docker-maven-plugin configuration.");
+        }
+
+        if (shouldWriteVagrantHashFileToSystem(cacheConfiguration, hasPreviousVagrantHashFile, hasEqualHashesForCurrentAndPrevious)) {
+            Vagrant.writeVagrantHashFileToTheFileSystem(vagrantFile);
+        }
+
+        Vagrant.writeVagrantFileToTheFileSystem(vagrantFile);
+        Vagrant.up(vagrantFile);
+
+        if (shouldCacheBox(cacheConfiguration, hasEqualHashesForCurrentAndPrevious)) {
+            cacheBox(vagrantFile, currentHash);
         }
     }
 
-    public static boolean hasVagrantFileConfigurationChanged(VagrantFile vagrantFile){
-        try {
-            return !StringUtils.equals(
-                    readVagrantFileContent(vagrantFile),
-                    vagrantFile.toFileFormat());
-        } catch (IOException e) { /*Do Nothing*/ }
-        return true;
+    private static boolean doesPreviousVagrantHashFileExist(VagrantFile vagrantFile) {
+        LogF.i(String.format("Checking for existing file %s", vagrantFile.getFullHashFilePath()));
+        boolean hasExistingFile = false;
+        if(hasExistingFile = Files.exists(vagrantFile.getFullHashFilePath())){
+            LogF.i(String.format("File exists at %s", vagrantFile.getFullHashFilePath()));
+        }
+        return hasExistingFile;
     }
 
-    private static String readVagrantFileContent(VagrantFile fullPath) throws IOException {
-        return new String(Files.readAllBytes(fullPath.getFullPath()));
+    private static boolean shouldCacheBox(boolean cacheConfiguration, boolean hasEqualHashesForCurrentAndPrevious) {
+        return cacheConfiguration && !hasEqualHashesForCurrentAndPrevious;
+    }
+
+    private static boolean shouldWriteVagrantHashFileToSystem(boolean cacheConfiguration, boolean hasPreviousVagrantHashFile, boolean hasEqualHashesForCurrentAndPrevious) {
+        return cacheConfiguration && (!hasPreviousVagrantHashFile || !hasEqualHashesForCurrentAndPrevious);
+    }
+
+    private static void cacheBox(VagrantFile vagrantFile, String hash) throws IOException {
+        LogF.i("Caching current configuration as box: %s", hash);
+        Vagrant.packageBox(hash, vagrantFile.getPath());
+        Vagrant.addBox(hash, vagrantFile);
+        Vagrant.up(vagrantFile);
+        cleanupTempPackagedBox(vagrantFile);
+    }
+
+    private static void cleanupTempPackagedBox(VagrantFile vagrantFile) throws IOException {
+        File file = new File(vagrantFile.getPath().toString(), vagrantFile.getHexHashCode());
+
+        LogF.i("Cleaning up - removing %s", file.getAbsolutePath());
+        if(Files.deleteIfExists(file.toPath())){
+            LogF.i("Successfully removed %s", file.getAbsolutePath());
+        }else{
+            LogF.i("Failed to removed %s", file.getAbsolutePath());
+        }
+    }
+
+    private static void addBox(String hash, VagrantFile vagrantFile) {
+        cmd(String.format("box add --name %s %s",hash,hash),vagrantFile.getPath(),"");
+    }
+
+    private static void removeBox(String boxName) {
+        cmd("box remove "+boxName,new File("/").toPath(), "Removing Box with name "+boxName);
+    }
+
+    private static boolean hasExistingBox(String hash) {
+        List<String> output = new ArrayList<String>();
+        try {
+            Console.exec("vagrant box list", null, new File("/"), output);
+            for(String line :output){
+                if(StringUtils.contains(line,hash)){
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private static void writeVagrantHashFileToTheFileSystem(VagrantFile vagrantFile) throws IOException {
+        writeFileToTheFileSystem(vagrantFile.getFullHashFilePath(), vagrantFile.getHexHashCode());
+    }
+
+    public static void writeVagrantFileToTheFileSystem(VagrantFile vagrantFile) throws IOException {
+        writeFileToTheFileSystem(vagrantFile.getFullPath(), vagrantFile.toFileFormat());
+    }
+
+    public static void writeFileToTheFileSystem(Path absolutePath, String content) throws IOException {
+        LogF.i("Writing %s", absolutePath);
+        if(!Files.exists(absolutePath.getParent())) {
+            Files.createDirectory(absolutePath.getParent());
+        }
+        Files.write(absolutePath, content.getBytes());
+    }
+
+    private static String readHashFromFile(VagrantFile vagrantFile) throws IOException {
+        return new String(Files.readAllBytes(vagrantFile.getFullHashFilePath()));
     }
 }

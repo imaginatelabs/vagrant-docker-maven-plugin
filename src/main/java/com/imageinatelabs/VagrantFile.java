@@ -7,13 +7,14 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class VagrantFile {
-    //TODO mount local file system to access to all the project files
     public static final String FILE_NAME = "Vagrantfile";
+    public static final String HASH_FILE_NAME = "Vagrantfile.hash";
     private final List<Container> containers;
     private String box;
     private String boxUrl;
     private List<String> networks;
     private File path;
+    private String configCacheHash = "";
 
     public VagrantFile(File path, String box, String boxUrl, List<String> networks, List<Container> containers) {
         this.box = box;
@@ -26,11 +27,19 @@ public class VagrantFile {
     public String toFileFormat(){
         return String.format("%s%s%s%s%s%s",
                 "# -*- mode: ruby -*-\n# vi: set ft=ruby :\n\nVagrant.configure(\"2\") do |config|\n",
-                println("config.vm.box",box),
-                println("config.vm.box_url", boxUrl),
+                printBox(),
+                println("config.vm.box_url", boxUrl, hasConfigCache()),
                 printNetworks(networks),
                 printDocker(containers),
                 "end");
+    }
+
+    private String printBox(){
+        return hasConfigCache() ? println("config.vm.box", configCacheHash) : println("config.vm.box",box);
+    }
+
+    private boolean hasConfigCache() {
+        return StringUtils.isNotEmpty(configCacheHash);
     }
 
     private String printNetworks(List<String> networks){
@@ -46,6 +55,13 @@ public class VagrantFile {
         return String.format("%s%s %s %s%s%s\n", prefix, key, delimiter, quote, value, quote);
     }
 
+    private String println(String key, String delimiter, boolean configCache){
+        if(!configCache){
+            return println(key,delimiter);
+        }
+        return "";
+    }
+
     private String println(String key, String value){
         return println(key, "=", value, "\"");
     }
@@ -56,8 +72,10 @@ public class VagrantFile {
         }
         String str =  "\tconfig.vm.provision \"docker\" do |d|\n";
 
-        for(Container container : containers){
-            str += container.printPull();
+        if(hasConfigCache()) {
+            for (Container container : containers) {
+                str += container.printPull();
+            }
         }
 
         for(Container container : containers){
@@ -66,6 +84,14 @@ public class VagrantFile {
 
         str += "\tend\n";
         return str;
+    }
+
+    public String getHexHashCode(){
+        return Integer.toHexString(this.toFileFormat().hashCode());
+    }
+
+    public byte[] getHexHashCodeAsBytes(){
+        return Integer.toHexString(this.toFileFormat().hashCode()).getBytes();
     }
 
     public Path getPath() {
@@ -78,5 +104,13 @@ public class VagrantFile {
 
     public byte[] getBytes() {
         return toFileFormat().getBytes();
+    }
+
+    public Path getFullHashFilePath() {
+        return new File(path,HASH_FILE_NAME).toPath();
+    }
+
+    public void useCachedBox(String configCacheHash) {
+        this.configCacheHash = configCacheHash;
     }
 }
