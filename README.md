@@ -60,6 +60,9 @@ This configuration maps closely to the Vagrant docker provider configuration fou
             <cmd></cmd>
           </container>
         </containers>
+
+        <!-- Docker Container Specification -->
+        <postShellScript>relative/path/from/vagrantfile/directory/script.sh</postShellScript>
     </configuration>
     </plugin>
   <plugins>
@@ -71,7 +74,7 @@ as well as passwords set by a property specified in the maven properties section
 
 ## Commands
 ### Run
-Runs a Vagrant box with any specified Docker Containers
+Runs a Vagrant box with any specified Docker Containers or shell scripts
 ```
 > mvn docker-maven-plugin:run
 ```

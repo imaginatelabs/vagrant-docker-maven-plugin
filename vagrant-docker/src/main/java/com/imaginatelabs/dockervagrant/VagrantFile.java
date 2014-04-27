@@ -14,7 +14,8 @@ public class VagrantFile {
     private String boxUrl;
     private List<String> networks;
     private File path;
-    private String configCacheHash = "";
+    private String configCacheHash;
+    private String postShellScript;
 
     public VagrantFile(File path, String box, String boxUrl, List<String> networks, List<Container> containers) {
         this.box = box;
@@ -24,14 +25,28 @@ public class VagrantFile {
         this.path = path;
     }
 
+    public VagrantFile(File path, String box, String boxUrl, List<String> networks, List<Container> containers, String postShellScript) {
+        this.box = box;
+        this.boxUrl = boxUrl;
+        this.networks = networks;
+        this.containers = containers;
+        this.path = path;
+        this.postShellScript = postShellScript;
+    }
+
     public String toText(){
-        return String.format("%s%s%s%s%s%s",
+        return String.format("%s%s%s%s%s%s%s",
                 "# -*- mode: ruby -*-\n# vi: set ft=ruby :\n\nVagrant.configure(\"2\") do |config|\n",
                 printBox(),
                 println("config.vm.box_url", boxUrl, hasConfigCache()),
-                printNetworks(networks),
-                printDocker(containers),
+                printNetworks(),
+                printDocker(),
+                printPostShellScript(),
                 "end");
+    }
+
+    private String printPostShellScript() {
+        return StringUtils.isNotEmpty(postShellScript) ? println("config.vm.provision \"shell\",","path:", postShellScript,"\""): "";
     }
 
     private String printBox(){
@@ -42,7 +57,7 @@ public class VagrantFile {
         return StringUtils.isNotEmpty(configCacheHash);
     }
 
-    private String printNetworks(List<String> networks){
+    private String printNetworks(){
         String results = "";
         for(String network : networks) {
             results += println("config.vm.network", "", network, "");
@@ -66,7 +81,7 @@ public class VagrantFile {
         return println(key, "=", value, "\"");
     }
 
-    private String printDocker(List<Container> containers){
+    private String printDocker(){
         if(containers.isEmpty()){
             return "";
         }

@@ -35,10 +35,13 @@ public class RunDocker extends AbstractMojo {
     @Parameter( property = "run.cacheConfiguration", defaultValue = "true")
     private boolean cacheConfiguration = true;
 
+    @Parameter ( property = "run.postShellScript", defaultValue = "")
+    private String postShellScript;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
-            Vagrant.run(new VagrantFile(outputDirectory, box, boxUrl, networks, containers), cacheConfiguration);
+            Vagrant.run(new VagrantFile(outputDirectory, box, boxUrl, networks, containers, postShellScript), cacheConfiguration);
         } catch (IOException e) {
             throw new MojoExecutionException("Run Failed",e);
         }
