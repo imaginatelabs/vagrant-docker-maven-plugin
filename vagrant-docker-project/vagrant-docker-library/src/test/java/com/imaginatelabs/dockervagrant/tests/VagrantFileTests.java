@@ -101,6 +101,7 @@ public class VagrantFileTests {
                     "\tconfig.vm.box = \"mybox.box\"\n" +
                     "\tconfig.vm.box_url = \"https://my.url\"\n" +
                     "\tconfig.vm.provision \"docker\" do |d|\n" +
+                        "\t\td.pull_images \"myDockerImage\"\n" +
                         "\t\td.run \"myDockerName\", image:\"myDockerImage\" ,\n" +
                             "\t\t\targs: \"myArgs\" ,\n" +
                             "\t\t\tcmd: \"myCmds\"\n" +
@@ -129,6 +130,8 @@ public class VagrantFileTests {
                     "\tconfig.vm.box = \"mybox.box\"\n" +
                     "\tconfig.vm.box_url = \"https://my.url\"\n" +
                     "\tconfig.vm.provision \"docker\" do |d|\n" +
+                        "\t\td.pull_images \"myDockerImage1\"\n" +
+                        "\t\td.pull_images \"myDockerImage2\"\n" +
                         "\t\td.run \"myDockerName1\", image:\"myDockerImage1\" ,\n" +
                             "\t\t\targs: \"myArgs1\" ,\n" +
                             "\t\t\tcmd: \"myCmds1\"\n" +
@@ -160,6 +163,8 @@ public class VagrantFileTests {
                         "\tconfig.vm.box = \"mybox.box\"\n" +
                         "\tconfig.vm.box_url = \"https://my.url\"\n" +
                         "\tconfig.vm.provision \"docker\" do |d|\n" +
+                        "\t\td.pull_images \"myDockerImage1\"\n" +
+                        "\t\td.pull_images \"myDockerImage2\"\n" +
                         "\t\td.run \"myDockerName1\", image:\"myDockerImage1\" ,\n" +
                         "\t\t\targs: \"myArgs1\" ,\n" +
                         "\t\t\tcmd: \"myCmds1\"\n" +

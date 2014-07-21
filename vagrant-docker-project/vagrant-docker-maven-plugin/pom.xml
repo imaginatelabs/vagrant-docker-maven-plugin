@@ -2,11 +2,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.imaginatelabs</groupId>
-    <artifactId>docker-maven-plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <parent>
+        <groupId>com.imaginatelabs</groupId>
+        <artifactId>vagrant-docker-project</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>vagrant-docker-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <name>Docker Maven Plugin</name>
+    <name>Vagrant Docker Maven Plugin</name>
 
     <!-- TODO Publish to Maven Central -->
     <url>https://github.com/imaginatelabs/docker-maven-plugin</url>
@@ -39,11 +43,10 @@
         </dependency>
         <dependency>
             <groupId>com.imaginatelabs</groupId>
-            <artifactId>vagrant-docker</artifactId>
+            <artifactId>vagrant-docker-library</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>

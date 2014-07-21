@@ -54,7 +54,7 @@ public class VagrantFile {
     }
 
     private boolean hasConfigCache() {
-        return StringUtils.isNotEmpty(configCacheHash);
+        return StringUtils.isNotBlank(configCacheHash);
     }
 
     private String printNetworks(){
@@ -87,7 +87,7 @@ public class VagrantFile {
         }
         String str =  "\tconfig.vm.provision \"docker\" do |d|\n";
 
-        if(hasConfigCache()) {
+        if(!hasConfigCache()) {
             for (Container container : containers) {
                 str += container.printPull();
             }
